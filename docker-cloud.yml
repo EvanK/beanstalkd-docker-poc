@@ -1,0 +1,23 @@
+# beanstalk daemon, the beating heart of our job queue
+daemon:
+  image: evanskaufman/beanstalkd:latest
+  expose:
+    - "11300"
+  volumes:
+    - /var/beanstalkd
+  restart: always
+
+# a mock producer/consumer, constantly adding/removing jobs against the daemon
+producerconsumer:
+  image: evanskaufman/beanstalk-producerconsumer:latest
+  links:
+    - daemon:beanstalkd
+  restart: always
+
+# a web console to watch the status of our job queue
+console:
+  image: kusmierz/beanstalk-console:latest
+  links:
+    - daemon:beanstalkd
+  ports:
+    - "80"

@@ -1,0 +1,42 @@
+version: '2'
+
+services:
+  # beanstalk daemon, the beating heart of our job queue
+  daemon:
+    build:
+      context: ./daemon
+    image: evanskaufman/beanstalkd:latest
+    container_name: beanstalk_daemon
+    expose:
+      - "11300"
+    volumes:
+      - beanlog:/var/beanstalkd
+    restart: always
+
+  # a mock producer/consumer, constantly adding/removing jobs against the daemon
+  producerconsumer:
+    build:
+      context: ./producer-consumer
+    image: evanskaufman/beanstalk-producerconsumer:latest
+    container_name: beanstalk_producerconsumer
+    depends_on:
+      - daemon
+    links:
+      - daemon:beanstalkd
+    restart: always
+
+  # a web console to watch the status of our job queue
+  console:
+    image: kusmierz/beanstalk-console:latest
+    container_name: beanstalk_console
+    depends_on:
+      - daemon
+    links:
+      - daemon:beanstalkd
+    ports:
+      - "80:80"
+
+# persistent named volume for our binlog
+volumes:
+  beanlog:
+    external: true
